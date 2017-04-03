@@ -1,0 +1,15 @@
+{
+  "name": "locmak",
+  "version": "1.0.0",
+  "description": "local market",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "t3math00",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.17.1",
+    "express": "^4.15.2"
+  }
+}
