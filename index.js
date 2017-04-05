@@ -145,6 +145,7 @@ router.route('/products/:product_id')
 			res.contentType(product.image.contentType);
           	res.send(product.image.data);
    			// res.json(products);
+   			
 		});
 	});
 
