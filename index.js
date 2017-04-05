@@ -4,6 +4,8 @@ var express = require('express')
 var app = express();
 var mongoose = require('mongoose');
 var bodyParser = require('body-parser');
+var fs = require('fs');
+var ne = require('node-each');
 
 // configure app
 app.use(bodyParser.urlencoded({extended: true}));
@@ -115,6 +117,57 @@ router.route('/buyers/:id')
 			res.json({ message: 'Deleted!'})
 		});
 	});
+
+
+//testing image
+var imgPath = "/img/Desert.jpg";
+
+//---------- product without id
+router.route('/products')
+
+	.get(function(req, res) {
+		Product.find(function(err, products){
+			if (err) throw err;
+   			ne.each(products, function(product, i) {
+   				console.log(product.name);
+
+   			});
+   			res.json(products);
+		});
+	});
+
+//---------- product with Product_id
+router.route('/products/:product_id')
+
+	.get(function(req, res) {
+		Product.findById(req.params.id, function(err, product){
+			if (err) throw err;
+			res.contentType(product.image.contentType);
+          	res.send(product.image.data);
+   			// res.json(products);
+		});
+	});
+
+
+//---------- Product with seller_id
+router.route('/products/:seller_id')
+
+	.post(function(req, res) {
+		var product = new Product({
+			seller_id : req.body.seller_id,
+			type : req.body.type,
+			name : req.body.name,
+			desc : req.body.desc,
+			price : req.body.price
+		});
+			product.image.data = fs.readFileSync(imgPath);
+			product.image.contentType = 'image/jpg';
+
+			product.save(function(err){
+				if (err) throw err;
+				res.json({ message : 'Product created!'});
+			});
+		})
 
 // app.get('/', function (req, res) {
 // 	var buyer = new Buyer({
