@@ -5,7 +5,6 @@ var app = express();
 var mongoose = require('mongoose');
 var bodyParser = require('body-parser');
 var fs = require('fs');
-var ne = require('node-each');
 
 // configure app
 app.use(bodyParser.urlencoded({extended: true}));
@@ -38,6 +37,7 @@ mongoose.connect(dbURL, function(err) {
 
 // call model
 var Buyer = require('./app/models/buyer');
+var Type = require('./app/models/type');
 var Seller = require('./app/models/seller');
 var Admin = require('./app/models/admin');
 var Product = require('./app/models/product');
@@ -54,7 +54,7 @@ router.get('/', function(req, res) {
 
 
 
-// route with buyer
+// ------------- ROUTE WITH BUYER
 
 router.route('/buyers')
 
@@ -99,10 +99,11 @@ router.route('/buyers/:id')
 
 			buyer.name = req.body.name;
 			buyer.password = req.body.password;
+
 			buyer.save(function(err) {
 				if (err) throw err;
 
-				res.json({ message : 'Buyer undated!'});
+				res.json({ message : 'Buyer updated!'});
 			});
 		});
 	})
@@ -119,44 +120,235 @@ router.route('/buyers/:id')
 	});
 
 
-//testing image
+
+
+
+// ------------- ROUTE WITH SELLER
+
+router.route('/sellers')
+
+	//create a seller
+	.post(function(req, res){
+		var seller = new Seller({
+			name: req.body.name,
+			password: req.body.password
+		});
+
+		seller.save(function(err) {
+			if(err) throw err;
+			res.json({ message: 'Seller created!'});
+		});
+
+	})
+
+	//get all sellers
+	.get(function(req, res) {
+		Seller.find(function(err, sellers){
+			if (err) throw err;
+			res.json(sellers);
+		});
+	});
+	
+//---------- seller with id
+
+router.route('/sellers/:id')
+	//get seller
+	.get(function(req, res) {
+		Seller.findById(req.params.id, function(err, seller) {
+			if (err) throw err;
+			res.json(seller);
+		});
+	})
+
+	//update seller
+	.put(function(req, res) {
+		Seller.findById(req.params.id, function(err, seller) {
+			if (err) throw err;
+
+			seller.name = req.body.name;
+			seller.password = req.body.password;
+
+			seller.save(function(err) {
+				if (err) throw err;
+
+				res.json({ message : 'Seller updated!'});
+			});
+		});
+	})
+
+	//delete seller
+	.delete(function(req, res){
+		Seller.remove({
+			_id : req.params.id
+		}, function(err, seller){
+			if (err) throw err;
+
+			res.json({ message: 'Deleted!'})
+		});
+	});
+
+
+// ------------- ROUTE WITH TYPE
+router.route('/types')
+
+	//create a type
+	.post(function(req, res){
+		var type = new Type({
+			name: req.body.name,
+			desc: req.body.desc
+		});
+
+		type.save(function(err) {
+			if(err) throw err;
+			res.json({ message: 'Type created!'});
+		});
+
+	})
+
+	//get all types
+	.get(function(req, res) {
+		Type.find(function(err, types){
+			if (err) throw err;
+			res.json(types);
+		});
+	});
+
+//---------- type with id
+
+router.route('/type/:id')
+	
+	//get type
+	.get(function(req, res) {
+		Type.findById(req.params.id, function(err, type) {
+			if (err) throw err;
+			res.json(type);
+		});
+	})
+
+	//update type
+	.put(function(req, res) {
+		Type.findById(req.params.id, function(err, type) {
+			if (err) throw err;
+
+			type.name = req.body.name;
+			type.desc = req.body.desc;
+
+			type.save(function(err) {
+				if (err) throw err;
+
+				res.json({ message : 'Type updated!'});
+			});
+		});
+	})
+
+	//delete type
+	.delete(function(req, res){
+		Type.remove({
+			_id : req.params.id
+		}, function(err, type){
+			if (err) throw err;
+
+			res.json({ message: 'Deleted!'})
+		});
+	});
+
+// ------------- ROUTE WITH PRODUCT
 var imgPath = "/img/Desert.jpg";
 
 //---------- product without id
 router.route('/products')
-
+	
+	// get all products
 	.get(function(req, res) {
 		Product.find(function(err, products){
 			if (err) throw err;
-   			ne.each(products, function(product, i) {
-   				console.log(product.name);
-
-   			});
    			res.json(products);
 		});
-	});
+	})
+
+	// delete all products
+	.delete(function(req, res) {
+		Product.remove({}, function(err, products){
+			if(err) throw err;
+
+			res.json({ message: 'Deleted ALL!'});
+		});
+	})
+
+//---------- product with type
+router.route('/products/type/:type_id')
+
+	// get all product with type
+	.get(function(req, res) {
+		Product.find({type_id : req.params.type_id} , function(err, products) {
+			if (err) throw err;
+
+			res.json(products);
+		});
+	})
+
+	// delete all product with type
+	.delete(function(req, res) {
+		Product.remove({type_id : req.params.type_id} , function(err, products) {
+			if (err) throw err;
+
+			res.json({ message : 'Deleted!' });
+		});
+	})
+
 
 //---------- product with Product_id
 router.route('/products/:product_id')
-
+	
+	// get product with product_id
 	.get(function(req, res) {
-		Product.findById(req.params.id, function(err, product){
+		Product.findById(req.params.product_id, function(err, product){
 			if (err) throw err;
 			res.contentType(product.image.contentType);
           	res.send(product.image.data);
    			// res.json(products);
    			
 		});
-	});
+	})
+
+	//update product
+	.put(function(req, res) {
+		Product.findById(req.params.product_id, function(err, product) {
+			if (err) throw err;
+
+			product.type_id = req.body.type_id,
+			product.name = req.body.name,
+			product.desc = req.body.desc,
+			product.price = req.body.price
+			
+			product.save(function(err) {
+				if (err) throw err;
+
+				res.json({ message : 'Product updated!'});
+			});
+		});
+	})
+
+	// delete product with product_id
+	.delete(function(req, res){
+		Product.remove({
+			_id : req.params.product_id
+		}, function(err, product){
+			if (err) throw err;
+
+			res.json({ message: 'Deleted!'});
+		});
+	})
 
 
-//---------- Product with seller_id
-router.route('/products/:seller_id')
-
+//---------- Product with seller_id 
+router.route('/products/:seller_id/items')
+	
+	// Seller create product
 	.post(function(req, res) {
 		var product = new Product({
-			seller_id : req.body.seller_id,
-			type : req.body.type,
+			seller_id : req.params.seller_id,
+			type_id : req.body.type_id,
 			name : req.body.name,
 			desc : req.body.desc,
 			price : req.body.price
@@ -170,30 +362,15 @@ router.route('/products/:seller_id')
 			});
 		})
 
-// app.get('/', function (req, res) {
-// 	var buyer = new Buyer({
-// 		name : "tung",
-// 		password: "123",
-// 	});
-// 	buyer.save(function(err){
-// 		if(err) throw err;
-// 		res.send(buyer);
-// 	});
+	// Seller view all their product
+	.get(function(req, res) {
+		Product.find({seller_id : req.params.seller_id},function(err, products){
+			if (err) throw err;
+			res.json(products);
+		});
+	});
 
-// 	var seller = new Seller({
-// 		name : "hang",
-// 		password: "123",
-// 	});
-
-// 	seller.save(function(err){
-// 		if(err) throw err;
-// 		buyer.save(function(err){
-// 			if(err) throw err;
-// 			res.send(buyer);
-// 		});	
-// 	});
-  
-// });
+	
 
 app.listen(3000, function () {
   console.log('App listening on port 3000!')
