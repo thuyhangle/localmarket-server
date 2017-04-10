@@ -42,6 +42,7 @@ var Seller = require('./app/models/seller');
 var Admin = require('./app/models/admin');
 var Product = require('./app/models/product');
 var Post = require('./app/models/post');
+var Order = require('./app/models/order');
 
 
 // ROUTE
@@ -110,9 +111,7 @@ router.route('/buyers/:id')
 
 	//delete buyer
 	.delete(function(req, res){
-		Buyer.remove({
-			_id : req.params.id
-		}, function(err, buyer){
+		Buyer.remove({_id : req.params.id}, function(err, buyer){
 			if (err) throw err;
 
 			res.json({ message: 'Deleted!'})
@@ -178,9 +177,7 @@ router.route('/sellers/:id')
 
 	//delete seller
 	.delete(function(req, res){
-		Seller.remove({
-			_id : req.params.id
-		}, function(err, seller){
+		Seller.remove({_id : req.params.id}, function(err, seller){
 			if (err) throw err;
 
 			res.json({ message: 'Deleted!'})
@@ -243,9 +240,7 @@ router.route('/type/:id')
 
 	//delete type
 	.delete(function(req, res){
-		Type.remove({
-			_id : req.params.id
-		}, function(err, type){
+		Type.remove({_id : req.params.id}, function(err, type){
 			if (err) throw err;
 
 			res.json({ message: 'Deleted!'})
@@ -331,9 +326,7 @@ router.route('/products/:product_id')
 
 	// delete product with product_id
 	.delete(function(req, res){
-		Product.remove({
-			_id : req.params.product_id
-		}, function(err, product){
+		Product.remove({_id : req.params.product_id}, function(err, product){
 			if (err) throw err;
 
 			res.json({ message: 'Deleted!'});
@@ -371,6 +364,94 @@ router.route('/products/:seller_id/items')
 	});
 
 	
+// ------------- ROUTE WITH ORDER
+router.route('/orders/:buyer_id/:product_id')
+
+	//create a order
+	.post(function(req, res){
+		var order = new Order({
+			product_id: req.params.product_id,
+			buyer_id: req.params.buyer_id
+		});
+
+		order.save(function(err) {
+			if(err) throw err;
+			res.json({ message: 'Order created!'});
+		});
+
+	})
+
+	//get all orders
+	.get(function(req, res) {
+		Order.find(function(err, orders){
+			if (err) throw err;
+			res.json(orders);
+		});
+	});
+
+//---------- orders with id
+
+router.route('/orders/:id')
+	
+	//get order
+	.get(function(req, res) {
+		Order.findById(req.params.id, function(err, order) {
+			if (err) throw err;
+			res.json(order);
+		});
+	})
+
+	//delete order
+	.delete(function(req, res){
+		Order.remove({_id : req.params.id}, function(err, order){
+			if (err) throw err;
+
+			res.json({ message: 'Deleted!'})
+		});
+	});
+
+
+//---------- orders with buyer_id
+router.route('/orders/buyer/:buyer_id')
+
+	// get all orders from a buyer
+	.get(function(req, res) {
+		Order.find({buyer_id : req.params.buyer_id}, function(err, orders) {
+			if (err) throw err;
+			res.json(orders);
+		});
+	})
+
+	// remove all orders from a buyer
+	.delete(function(req, res) {
+		Order.remove({buyer_id : req.params.buyer_id}, function(err, orders) {
+			if (err) throw err;
+
+			res.json({ message: 'Deleted!'})
+		});
+	})
+
+
+//---------- orders with product_id
+router.route('/orders/product/:product_id')
+
+	// get all orders from a product
+	.get(function(req, res) {
+		Order.find({product_id : req.params.product_id}, function(err, orders) {
+			if (err) throw err;
+			res.json(orders);
+		});
+	})
+
+	// remove all orders from a product
+	.delete(function(req, res) {
+		Order.remove({product_id : req.params.product_id}, function(err, orders) {
+			if (err) throw err;
+
+			res.json({ message: 'Deleted!'})
+		});
+	})
+
 
 app.listen(3000, function () {
   console.log('App listening on port 3000!')
