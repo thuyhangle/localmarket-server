@@ -557,7 +557,6 @@ router.route('/posts/:id')
 	});
 
 
-	
 
 //---------- post with seller_id
 router.route('/posts/seller/:seller_id')
@@ -570,7 +569,6 @@ router.route('/posts/seller/:seller_id')
 			res.json(products);
 		});
 	})
-
 
 
 
