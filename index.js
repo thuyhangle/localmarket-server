@@ -186,6 +186,7 @@ router.route('/sellers/:id')
 
 
 // ------------- ROUTE WITH TYPE
+
 router.route('/types')
 
 	//create a type
@@ -365,6 +366,9 @@ router.route('/products/:seller_id/items')
 
 	
 // ------------- ROUTE WITH ORDER
+
+
+// route with orders, buyer_id and product_id
 router.route('/orders/:buyer_id/:product_id')
 
 	//create a order
@@ -381,13 +385,17 @@ router.route('/orders/:buyer_id/:product_id')
 
 	})
 
+//----------route with /orders
+
+router.route('/orders')
+
 	//get all orders
 	.get(function(req, res) {
 		Order.find(function(err, orders){
 			if (err) throw err;
 			res.json(orders);
 		});
-	});
+	})
 
 //---------- orders with id
 
@@ -453,6 +461,120 @@ router.route('/orders/product/:product_id')
 	})
 
 
+// ------------- ROUTE WITH POST
+
+//---------- post with product_id
+router.route('/posts/product/:product_id')
+
+	//create a post
+	.post(function(req, res){
+		var post = new Post({
+			product_id: req.params.product_id,
+			phone: req.body.phone,
+			address: req.body.address,
+			other: req.body.other
+		});
+
+		post.save(function(err) {
+			if(err) throw err;
+			res.json({ message: 'Post created!'});
+		});
+
+	})
+
+	//get all post from a product
+	.get(function(req, res) {
+		Post.find({product_id : req.params.product_id}, function(err, posts) {
+			if (err) throw err;
+			res.json(posts);
+		});
+	})
+
+	// delete all post from a product
+	.delete(function(req, res) {
+		Post.remove({product_id : req.params.product_id}, function(err, posts) {
+			if (err) throw err;
+
+			res.json({message : 'Deleted!'})
+		});
+	});
+
+//---------- route /posts
+router.route('/posts')
+
+	//get all posts
+	.get(function(req, res) {
+		Post.find(function(err, posts){
+			if (err) throw err;
+			res.json(posts);
+		});
+	})
+
+	.delete(function(req, res) {
+		Post.remove(function(err, posts) {
+			if (err) throw err;
+
+			res.json({message : 'DELETE ALL!'})
+		});
+	})
+
+//---------- post with id
+
+router.route('/posts/:id')
+	
+	//get a post
+	.get(function(req, res) {
+		Post.findById(req.params.id, function(err, post) {
+			if (err) throw err;
+			res.json(post);
+		});
+	})
+
+	//update post
+	.put(function(req, res) {
+		Post.findById(req.params.id, function(err, post) {
+			if (err) throw err;
+
+			post.phone = req.body.phone;
+			post.address = req.body.address;
+			post.other = req.body.other;
+
+			post.save(function(err) {
+				if (err) throw err;
+
+				res.json({ message : 'Post updated!'});
+			});
+		});
+	})
+
+	//delete a post
+	.delete(function(req, res){
+		Post.remove({_id : req.params.id}, function(err, post){
+			if (err) throw err;
+
+			res.json({ message: 'Deleted!'})
+		});
+	});
+
+
+	
+
+//---------- post with seller_id
+router.route('/posts/seller/:seller_id')
+
+	//get all post from a seller
+
+	.get(function(req, res) {
+		Product.find({seller_id : req.params.seller_id}, function(err, products) {
+			if (err) throw err;
+			res.json(products);
+		});
+	})
+
+
+
+
+//---------------   PORT
 app.listen(3000, function () {
   console.log('App listening on port 3000!')
 });

@@ -5,4 +5,4 @@ var orderSchema = new Schema({
 	product_id : {type : Schema.Types.ObjectId, ref: 'Product'},
 	buyer_id : {type : Schema.Types.ObjectId, ref: 'Buyer'}
 });
-module.exports = mongoose.model('Order', OrderSchema);
+module.exports = mongoose.model('Order', orderSchema);
