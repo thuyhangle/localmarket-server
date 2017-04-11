@@ -564,10 +564,27 @@ router.route('/posts/seller/:seller_id')
 	//get all post from a seller
 
 	.get(function(req, res) {
+		var sellerPosts = [];
 		Product.find({seller_id : req.params.seller_id}, function(err, products) {
 			if (err) throw err;
-			res.json(products);
+			for (var i = 0; i < products.length; i++) {
+				console.log("id", products[i].id);
+				Post.find({product_id : products[i].id}, function(err, posts) {
+					if (err) throw err;
+					for (var j = 0; j < posts.length; j++) {
+						sellerPosts.push(posts[j]);
+						console.log("in find",sellerPosts);
+
+					}
+				});
+				console.log(sellerPosts);
+			}
+			console.log("test", sellerPosts);
+			var sss = "sss";
+			console.log("tesssst", sss);
+			res.send(sss);
 		});
+
 	})
 
 
