@@ -9,7 +9,9 @@
   "author": "t3math00",
   "license": "ISC",
   "dependencies": {
+    "async": "^2.3.0",
     "body-parser": "^1.17.1",
-    "express": "^4.15.2"
+    "express": "^4.15.2",
+    "promise": "^7.1.1"
   }
 }
