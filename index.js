@@ -6,8 +6,29 @@ var mongoose = require('mongoose');
 var bodyParser = require('body-parser');
 var fs = require('fs');
 var async = require("async");
+var passport = require('passport');
+var flash    = require('connect-flash');
+var configDB = require('./config/database.js');
+var cookieParser = require('cookie-parser');
+var session = require('express-session');
 
 // configure app
+require('./config/passport')(passport);
+
+
+app.set('view engine', 'ejs'); // set up ejs for templating
+
+	// required for passport
+	app.use(session({
+  secret: 'ilovescotchscotchyscotchscotch',
+  resave: false,
+  saveUninitialized: true
+}))// session secret
+app.use(passport.initialize());
+app.use(passport.session()); // persistent login sessions
+app.use(flash()); // use connect-flash for flash messages stored in session
+
+app.use(cookieParser()); // read cookies (needed for auth)
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 app.use(function (req, res, next) {
@@ -30,7 +51,6 @@ app.use(function (req, res, next) {
 });
 
 // connect database
-var configDB = require('./config/database.js');
 mongoose.connect(configDB.url, function(err) {
     if (err) throw err;
     console.info('Connected to database');
@@ -45,7 +65,15 @@ var Product = require('./app/models/product');
 var Post = require('./app/models/post');
 var Order = require('./app/models/order');
 
+function isLoggedIn(req, res, next) {
 
+	// if user is authenticated in the session, carry on
+	if (req.isAuthenticated())
+		return next();
+
+	// if they aren't redirect them to the home page
+	res.redirect('/api/login');
+}
 // ROUTE
 var router = express.Router();
 app.use('/api', router);
@@ -54,6 +82,39 @@ router.get('/', function(req, res) {
 	res.json({ message: 'Welcome to Locmak api!' });	
 });
 
+// ------------- ROUTE WITH AUTH
+router.route('/login')
+
+	// render the page and pass in any flash data if it exists
+	.get(function(req, res) {
+		res.render('login.ejs' , { message : req.flash('loginMessage') });
+	})
+
+	app.post('/login',passport.authenticate('local-login', {
+		successRedirect : '/api/users', // redirect to the secure profile section
+		failureRedirect : '/api/login', // redirect back to the signup page if there is an error
+		failureFlash : true // allow flash messages
+	}));
+
+
+router.route('/signup')
+
+	.get(function(req, res) {
+		res.render('signup.ejs', { message: req.flash('signupMessage') });
+	})
+
+	app.post('/signup',passport.authenticate('local-signup', {
+		successRedirect : '/api/login', // redirect to the secure profile section
+		failureRedirect : '/api/signup', // redirect back to the signup page if there is an error
+		failureFlash : true // allow flash messages
+	}));
+
+router.route('/logout')
+	
+	.get(function(req, res) {
+		req.logout();
+		res.redirect('/api');
+	});
 
 
 // ------------- ROUTE WITH USER
@@ -63,7 +124,7 @@ router.route('/users')
 	//create a user
 	.post(function(req, res){
 		var user = new User({
-			name: req.body.name,
+			email: req.body.email,
 			password: req.body.password
 		});
 
@@ -75,11 +136,19 @@ router.route('/users')
 	})
 
 	//get all users
-	.get(function(req, res) {
+	.get(isLoggedIn,function(req, res) {
 		User.find(function(err, users){
 			if (err) throw err;
 			res.json(users);
 		});
+	});
+
+//---------- user profile
+router.route('/users/profile')
+	
+	//get user profile
+	.get(isLoggedIn,function(req, res) {
+		res.json(req.user);
 	});
 
 //---------- user with id
@@ -95,20 +164,20 @@ router.route('/users/:id')
 	})
 
 	//update user
-	.put(function(req, res) {
-		User.findById(req.params.id, function(err, user) {
-			if (err) throw err;
+	// .put(function(req, res) {
+	// 	User.findById(req.params.id, function(err, user) {
+	// 		if (err) throw err;
 
-			user.name = req.body.name;
-			user.password = req.body.password;
+	// 		user.email = req.body.email;
+	// 		user.password = req.body.password;
 
-			user.save(function(err) {
-				if (err) throw err;
+	// 		user.save(function(err) {
+	// 			if (err) throw err;
 
-				res.json({ message : 'User updated!'});
-			});
-		});
-	})
+	// 			res.json({ message : 'User updated!'});
+	// 		});
+	// 	});
+	// })
 
 	//delete user
 	.delete(function(req, res){
@@ -190,6 +259,24 @@ var imgPath = "/img/Desert.jpg";
 //---------- product without id
 router.route('/products')
 	
+	// User create product
+	.post(isLoggedIn, function(req, res) {
+		var product = new Product({
+			user_id : req.user.id,
+			type_id : req.body.type_id,
+			name : req.body.name,
+			desc : req.body.desc,
+			price : req.body.price
+		});
+			product.image.data = fs.readFileSync(imgPath);
+			product.image.contentType = 'image/jpg';
+
+			product.save(function(err){
+				if (err) throw err;
+				res.json({ message : 'Product created!'});
+			});
+		})
+
 	// get all products
 	.get(function(req, res) {
 		Product.find(function(err, products){
@@ -234,7 +321,7 @@ router.route('/products/:product_id')
 	
 	// get product with product_id
 	.get(function(req, res) {
-		Product.findById(req.params.product_id, function(err, product){
+		Product.findOne({_id : req.params.product_id}, function(err, product){
 			if (err) throw err;
 			res.contentType(product.image.contentType);
           	res.send(product.image.data);
@@ -272,29 +359,13 @@ router.route('/products/:product_id')
 
 
 //---------- Product with user
-router.route('/products/:user_id/items')
+router.route('/products/user/items')
 	
-	// User create product
-	.post(function(req, res) {
-		var product = new Product({
-			user_id : req.params.user_id,
-			type_id : req.body.type_id,
-			name : req.body.name,
-			desc : req.body.desc,
-			price : req.body.price
-		});
-			product.image.data = fs.readFileSync(imgPath);
-			product.image.contentType = 'image/jpg';
-
-			product.save(function(err){
-				if (err) throw err;
-				res.json({ message : 'Product created!'});
-			});
-		})
+	
 
 	// User view all their product
-	.get(function(req, res) {
-		Product.find({user_id : req.params.user_id},function(err, products){
+	.get(isLoggedIn, function(req, res) {
+		Product.find({ user_id : req.user.id },function(err, products){
 			if (err) throw err;
 			res.json(products);
 		});
@@ -305,13 +376,13 @@ router.route('/products/:user_id/items')
 
 
 // route with orders, user_id and product_id
-router.route('/orders/:user_id/:product_id')
+router.route('/orders/:product_id')
 
 	//create a order
-	.post(function(req, res){
+	.post(isLoggedIn, function(req, res){
 		var order = new Order({
 			product_id: req.params.product_id,
-			user_id: req.params.user_id
+			user_id: req.user.id
 		});
 
 		order.save(function(err) {
@@ -356,19 +427,19 @@ router.route('/orders/:id')
 
 
 //---------- orders with user_id
-router.route('/orders/user/:user_id')
+router.route('/orders/user/items')
 
 	// get all orders from a user
-	.get(function(req, res) {
-		Order.find({user_id : req.params.user_id}, function(err, orders) {
+	.get(isLoggedIn, function(req, res) {
+		Order.find({user_id : req.user.id}, function(err, orders) {
 			if (err) throw err;
 			res.json(orders);
 		});
 	})
 
 	// remove all orders from a buyer
-	.delete(function(req, res) {
-		Order.remove({user_id : req.params.user_id}, function(err, orders) {
+	.delete(isLoggedIn, function(req, res) {
+		Order.remove({user_id : req.user.id}, function(err, orders) {
 			if (err) throw err;
 
 			res.json({ message: 'Deleted!'})
@@ -495,13 +566,13 @@ router.route('/posts/:id')
 
 
 //---------- post with user_id
-router.route('/posts/user/:user_id')
+router.route('/posts/user/items')
 
 	//get all post from a user
 
 	.get(function(req, res) {
         var userPosts = [];
-        Product.find({user_id : req.params.user_id}, function(err, products) {
+        Product.find({user_id : req.user.id}, function(err, products) {
             if (err) throw err;
             async.eachSeries(products, function(product, next){
                 Post.find({product_id : product.id}, function(err, posts) {
