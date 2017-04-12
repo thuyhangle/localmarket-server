@@ -2,7 +2,7 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var productSchema = new Schema({
-	seller_id: {type : Schema.Types.ObjectId, ref: 'Seller'},
+	user_id: {type : Schema.Types.ObjectId, ref: 'User'},
 	type_id: {type : Schema.Types.ObjectId, ref: 'Type'},
 	name: String,
 	desc: String,

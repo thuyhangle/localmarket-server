@@ -30,16 +30,16 @@ app.use(function (req, res, next) {
 });
 
 // connect database
-var dbURL = 'mongodb://admin:admin@ds035016.mlab.com:35016/locmak';
-mongoose.connect(dbURL, function(err) {
+var configDB = require('./config/database.js');
+mongoose.connect(configDB.url, function(err) {
     if (err) throw err;
     console.info('Connected to database');
 });
 
 // call model
-var Buyer = require('./app/models/buyer');
+var User = require('./app/models/user');
 var Type = require('./app/models/type');
-var Seller = require('./app/models/seller');
+
 var Admin = require('./app/models/admin');
 var Product = require('./app/models/product');
 var Post = require('./app/models/post');
@@ -56,129 +56,63 @@ router.get('/', function(req, res) {
 
 
 
-// ------------- ROUTE WITH BUYER
+// ------------- ROUTE WITH USER
 
-router.route('/buyers')
+router.route('/users')
 
-	//create a buyer
+	//create a user
 	.post(function(req, res){
-		var buyer = new Buyer({
+		var user = new User({
 			name: req.body.name,
 			password: req.body.password
 		});
 
-		buyer.save(function(err) {
+		user.save(function(err) {
 			if(err) throw err;
-			res.json({ message: 'Buyer created!'});
+			res.json({ message: 'User created!'});
 		});
 
 	})
 
-	//get all buyers
+	//get all users
 	.get(function(req, res) {
-		Buyer.find(function(err, buyers){
+		User.find(function(err, users){
 			if (err) throw err;
-			res.json(buyers);
+			res.json(users);
 		});
 	});
 
-//---------- buyer with id
+//---------- user with id
 
-router.route('/buyers/:id')
+router.route('/users/:id')
 	
-	//get buyer
+	//get user
 	.get(function(req, res) {
-		Buyer.findById(req.params.id, function(err, buyer) {
+		User.findById(req.params.id, function(err, user) {
 			if (err) throw err;
-			res.json(buyer);
+			res.json(user);
 		});
 	})
 
-	//update buyer
+	//update user
 	.put(function(req, res) {
-		Buyer.findById(req.params.id, function(err, buyer) {
+		User.findById(req.params.id, function(err, user) {
 			if (err) throw err;
 
-			buyer.name = req.body.name;
-			buyer.password = req.body.password;
+			user.name = req.body.name;
+			user.password = req.body.password;
 
-			buyer.save(function(err) {
+			user.save(function(err) {
 				if (err) throw err;
 
-				res.json({ message : 'Buyer updated!'});
+				res.json({ message : 'User updated!'});
 			});
 		});
 	})
 
-	//delete buyer
+	//delete user
 	.delete(function(req, res){
-		Buyer.remove({_id : req.params.id}, function(err, buyer){
-			if (err) throw err;
-
-			res.json({ message: 'Deleted!'})
-		});
-	});
-
-
-
-
-
-// ------------- ROUTE WITH SELLER
-
-router.route('/sellers')
-
-	//create a seller
-	.post(function(req, res){
-		var seller = new Seller({
-			name: req.body.name,
-			password: req.body.password
-		});
-
-		seller.save(function(err) {
-			if(err) throw err;
-			res.json({ message: 'Seller created!'});
-		});
-
-	})
-
-	//get all sellers
-	.get(function(req, res) {
-		Seller.find(function(err, sellers){
-			if (err) throw err;
-			res.json(sellers);
-		});
-	});
-	
-//---------- seller with id
-
-router.route('/sellers/:id')
-	//get seller
-	.get(function(req, res) {
-		Seller.findById(req.params.id, function(err, seller) {
-			if (err) throw err;
-			res.json(seller);
-		});
-	})
-
-	//update seller
-	.put(function(req, res) {
-		Seller.findById(req.params.id, function(err, seller) {
-			if (err) throw err;
-
-			seller.name = req.body.name;
-			seller.password = req.body.password;
-
-			seller.save(function(err) {
-				if (err) throw err;
-
-				res.json({ message : 'Seller updated!'});
-			});
-		});
-	})
-
-	//delete seller
-	.delete(function(req, res){
-		Seller.remove({_id : req.params.id}, function(err, seller){
+		User.remove({_id : req.params.id}, function(err, user){
 			if (err) throw err;
 
 			res.json({ message: 'Deleted!'})
@@ -248,6 +182,7 @@ router.route('/type/:id')
 			res.json({ message: 'Deleted!'})
 		});
 	});
+
 
 // ------------- ROUTE WITH PRODUCT
 var imgPath = "/img/Desert.jpg";
@@ -336,13 +271,13 @@ router.route('/products/:product_id')
 	})
 
 
-//---------- Product with seller_id 
-router.route('/products/:seller_id/items')
+//---------- Product with user
+router.route('/products/:user_id/items')
 	
-	// Seller create product
+	// User create product
 	.post(function(req, res) {
 		var product = new Product({
-			seller_id : req.params.seller_id,
+			user_id : req.params.user_id,
 			type_id : req.body.type_id,
 			name : req.body.name,
 			desc : req.body.desc,
@@ -357,9 +292,9 @@ router.route('/products/:seller_id/items')
 			});
 		})
 
-	// Seller view all their product
+	// User view all their product
 	.get(function(req, res) {
-		Product.find({seller_id : req.params.seller_id},function(err, products){
+		Product.find({user_id : req.params.user_id},function(err, products){
 			if (err) throw err;
 			res.json(products);
 		});
@@ -369,14 +304,14 @@ router.route('/products/:seller_id/items')
 // ------------- ROUTE WITH ORDER
 
 
-// route with orders, buyer_id and product_id
-router.route('/orders/:buyer_id/:product_id')
+// route with orders, user_id and product_id
+router.route('/orders/:user_id/:product_id')
 
 	//create a order
 	.post(function(req, res){
 		var order = new Order({
 			product_id: req.params.product_id,
-			buyer_id: req.params.buyer_id
+			user_id: req.params.user_id
 		});
 
 		order.save(function(err) {
@@ -420,12 +355,12 @@ router.route('/orders/:id')
 	});
 
 
-//---------- orders with buyer_id
-router.route('/orders/buyer/:buyer_id')
+//---------- orders with user_id
+router.route('/orders/user/:user_id')
 
-	// get all orders from a buyer
+	// get all orders from a user
 	.get(function(req, res) {
-		Order.find({buyer_id : req.params.buyer_id}, function(err, orders) {
+		Order.find({user_id : req.params.user_id}, function(err, orders) {
 			if (err) throw err;
 			res.json(orders);
 		});
@@ -433,7 +368,7 @@ router.route('/orders/buyer/:buyer_id')
 
 	// remove all orders from a buyer
 	.delete(function(req, res) {
-		Order.remove({buyer_id : req.params.buyer_id}, function(err, orders) {
+		Order.remove({user_id : req.params.user_id}, function(err, orders) {
 			if (err) throw err;
 
 			res.json({ message: 'Deleted!'})
@@ -559,26 +494,26 @@ router.route('/posts/:id')
 
 
 
-//---------- post with seller_id
-router.route('/posts/seller/:seller_id')
+//---------- post with user_id
+router.route('/posts/user/:user_id')
 
-	//get all post from a seller
+	//get all post from a user
 
 	.get(function(req, res) {
-        var sellerPosts = [];
-        Product.find({seller_id : req.params.seller_id}, function(err, products) {
+        var userPosts = [];
+        Product.find({user_id : req.params.user_id}, function(err, products) {
             if (err) throw err;
             async.eachSeries(products, function(product, next){
                 Post.find({product_id : product.id}, function(err, posts) {
                     if (err) next(err);
                     for (var j = 0; j < posts.length; j++) {
-                        sellerPosts.push(posts[j]);
+                        userPosts.push(posts[j]);
                     }
                     next(null);
                 });
             }, function(err){
                 if(err) throw err;
-                res.send(sellerPosts);
+                res.send(userPosts);
             })
         });
 
