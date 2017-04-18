@@ -92,7 +92,7 @@ router.route('/login')
 
 	app.post('/login',passport.authenticate('local-login', {
 		successRedirect : '/api/users', // redirect to the secure profile section
-		failureRedirect : '/api/login', // redirect back to the signup page if there is an error
+		failureRedirect : '/login', // redirect back to the signup page if there is an error
 		failureFlash : true // allow flash messages
 	}));
 
@@ -105,7 +105,7 @@ router.route('/signup')
 
 	app.post('/signup',passport.authenticate('local-signup', {
 		successRedirect : '/api/login', // redirect to the secure profile section
-		failureRedirect : '/api/signup', // redirect back to the signup page if there is an error
+		failureRedirect : '/signup', // redirect back to the signup page if there is an error
 		failureFlash : true // allow flash messages
 	}));
 
@@ -217,7 +217,7 @@ router.route('/types')
 
 //---------- type with id
 
-router.route('/type/:id')
+router.route('/types/:id')
 	
 	//get type
 	.get(function(req, res) {
@@ -254,7 +254,6 @@ router.route('/type/:id')
 
 
 // ------------- ROUTE WITH PRODUCT
-var imgPath = "/img/Desert.jpg";
 
 //---------- product without id
 router.route('/products')
@@ -266,10 +265,11 @@ router.route('/products')
 			type_id : req.body.type_id,
 			name : req.body.name,
 			desc : req.body.desc,
-			price : req.body.price
+			price : req.body.price,
+			image : req.body.image
+
 		});
-			product.image.data = fs.readFileSync(imgPath);
-			product.image.contentType = 'image/jpg';
+			
 
 			product.save(function(err){
 				if (err) throw err;
@@ -323,9 +323,7 @@ router.route('/products/:product_id')
 	.get(function(req, res) {
 		Product.findOne({_id : req.params.product_id}, function(err, product){
 			if (err) throw err;
-			res.contentType(product.image.contentType);
-          	res.send(product.image.data);
-   			// res.json(products);
+   			res.json(products);
    			
 		});
 	})
@@ -335,10 +333,11 @@ router.route('/products/:product_id')
 		Product.findById(req.params.product_id, function(err, product) {
 			if (err) throw err;
 
-			product.type_id = req.body.type_id,
-			product.name = req.body.name,
-			product.desc = req.body.desc,
-			product.price = req.body.price
+			product.type_id = req.body.type_id;
+			product.name = req.body.name;
+			product.desc = req.body.desc;
+			product.price = req.body.price;
+			product.image = req.body.image;
 			
 			product.save(function(err) {
 				if (err) throw err;
