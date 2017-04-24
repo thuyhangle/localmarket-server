@@ -95,10 +95,17 @@ router.route('/login')
 	//	failureRedirect : '/login', // redirect back to the signup page if there is an error
 	//	failureFlash : true // allow flash messages
 	//}));
-	.post(function(req, res) {
-		User.findOne({ email : req.body.email },function(err, user){
+	.post(function(req, res, done) {
+		User.findOne({ local.email : req.body.email },function(err, user){
 			if (err) throw err;
-			res.json(user);
+			 if (!user) return done(null, false, { message: 'Incorrect username.' });
+			user.comparePassword(password, function(err, isMatch) {
+     			 if (isMatch) {
+       			 return done(null, user);
+      			 } else {
+        		 return done(null, false, { message: 'Incorrect password.' });
+     			 }
+    			});
 		});
 	})
 
