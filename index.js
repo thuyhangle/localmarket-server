@@ -95,31 +95,41 @@ router.route('/login')
 	//	failureRedirect : '/login', // redirect back to the signup page if there is an error
 	//	failureFlash : true // allow flash messages
 	//}));
-	.post(function(req, res, done) {
-		User.findOne({ local.email : req.body.email },function(err, user){
+	.post(function(req, res) {
+		User.findOne({ email : req.body.email },function(err, user){
 			if (err) throw err;
-			 if (!user) return done(null, false, { message: 'Incorrect username.' });
-			user.comparePassword(password, function(err, isMatch) {
-     			 if (isMatch) {
-       			 return done(null, user);
-      			 } else {
-        		 return done(null, false, { message: 'Incorrect password.' });
-     			 }
-    			});
-		});
+			 
+			 	if (!user) {res.json( { message: 'Incorrect username.' })};
+				else{
+					if(user.password == req.body.password){
+						res.json(user);
+					}
+					else{
+						res.json({message : "Incorrect password!"});
+					}
+					
+			}});
 	})
+
 
 router.route('/signup')
 
-	.get(function(req, res) {
-		res.render('signup.ejs', { message: req.flash('signupMessage') });
-	})
+// 	.get(function(req, res) {
+// 		res.render('signup.ejs', { message: req.flash('signupMessage') });
+// 	})
 
-	app.post('/signup',passport.authenticate('local-signup', {
-		successRedirect : '/api/login', // redirect to the secure profile section
-		failureRedirect : '/signup', // redirect back to the signup page if there is an error
-		failureFlash : true // allow flash messages
-	}));
+	.post(function(req, res){
+		var user = new User({
+			email: req.body.email,
+			password: req.body.password
+		});
+
+		user.save(function(err) {
+			if(err) throw err;
+			res.json({ message: 'User created!'});
+		});
+
+	})
 
 router.route('/logout')
 	
@@ -134,21 +144,21 @@ router.route('/logout')
 router.route('/users')
 
 	//create a user
-	.post(function(req, res){
-		var user = new User({
-			email: req.body.email,
-			password: req.body.password
-		});
+// 	.post(function(req, res){
+// 		var user = new User({
+// 			email: req.body.email,
+// 			password: req.body.password
+// 		});
 
-		user.save(function(err) {
-			if(err) throw err;
-			res.json({ message: 'User created!'});
-		});
+// 		user.save(function(err) {
+// 			if(err) throw err;
+// 			res.json({ message: 'User created!'});
+// 		});
 
-	})
+// 	})
 
 	//get all users
-	.get(isLoggedIn,function(req, res) {
+	.get(function(req, res) {
 		User.find(function(err, users){
 			if (err) throw err;
 			res.json(users);
@@ -159,9 +169,12 @@ router.route('/users')
 router.route('/users/profile')
 	
 	//get user profile
-	.get(isLoggedIn,function(req, res) {
-		res.json(req.user);
-	});
+	.get(function(req, res) {
+		User.findById(req.body.id, function(err, user) {
+			if (err) throw err;
+			res.json(user);
+		});
+	})
 
 //---------- user with id
 
@@ -271,9 +284,9 @@ router.route('/types/:id')
 router.route('/products')
 	
 	// User create product
-	.post(isLoggedIn, function(req, res) {
+	.post( function(req, res) {
 		var product = new Product({
-			user_id : req.user.id,
+			user_id : req.body.id,
 			type_id : req.body.type_id,
 			name : req.body.name,
 			desc : req.body.desc,
@@ -375,8 +388,8 @@ router.route('/products/user/items')
 	
 
 	// User view all their product
-	.get(isLoggedIn, function(req, res) {
-		Product.find({ user_id : req.user.id },function(err, products){
+	.get( function(req, res) {
+		Product.find({ user_id : req.body.id },function(err, products){
 			if (err) throw err;
 			res.json(products);
 		});
@@ -390,10 +403,10 @@ router.route('/products/user/items')
 router.route('/orders/:product_id')
 
 	//create a order
-	.post(isLoggedIn, function(req, res){
+	.post( function(req, res){
 		var order = new Order({
 			product_id: req.params.product_id,
-			user_id: req.user.id
+			user_id: req.body.id
 		});
 
 		order.save(function(err) {
@@ -441,16 +454,16 @@ router.route('/orders/:id')
 router.route('/orders/user/items')
 
 	// get all orders from a user
-	.get(isLoggedIn, function(req, res) {
-		Order.find({user_id : req.user.id}, function(err, orders) {
+	.get( function(req, res) {
+		Order.find({user_id : req.body.id}, function(err, orders) {
 			if (err) throw err;
 			res.json(orders);
 		});
 	})
 
 	// remove all orders from a buyer
-	.delete(isLoggedIn, function(req, res) {
-		Order.remove({user_id : req.user.id}, function(err, orders) {
+	.delete( function(req, res) {
+		Order.remove({user_id : req.body.id}, function(err, orders) {
 			if (err) throw err;
 
 			res.json({ message: 'Deleted!'})
