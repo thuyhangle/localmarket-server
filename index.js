@@ -123,15 +123,24 @@ router.route('/signup')
 // 	})
 
 	.post(function(req, res){
-		var user = new User({
-			email: req.body.email,
-			password: req.body.password
-		});
+		User.findOne({ email : req.body.email },function(err, user){
+		if (err) throw err;
+		if (user) {
+			res.json( { message: 'Email has been used!' });
+		}
+		else
+		{
+			var user = new User({
+				email: req.body.email,
+				password: req.body.password
+			});
 
-		user.save(function(err) {
-			if(err) throw err;
-			res.json({ message: 'User created!'});
-		});
+			user.save(function(err) {
+				if(err) throw err;
+				res.json({ message: 'User created!'});
+			});
+		}
+	});
 
 	})
 
@@ -290,7 +299,7 @@ router.route('/products')
 	// User create product
 	.post( function(req, res) {
 		var product = new Product({
-			user_id : req.body.id,
+			user_id : req.body.user_id,
 			type_id : req.body.type_id,
 			name : req.body.name,
 			desc : req.body.desc,
@@ -352,7 +361,7 @@ router.route('/products/:product_id')
 	.get(function(req, res) {
 		Product.findOne({_id : req.params.product_id}, function(err, product){
 			if (err) throw err;
-   			res.json(products);
+   			res.json(product);
    			
 		});
 	})
@@ -393,7 +402,7 @@ router.route('/products/user/items')
 
 	// User view all their product
 	.get( function(req, res) {
-		Product.find({ user_id : req.body.id },function(err, products){
+		Product.find({ user_id : req.body.user_id },function(err, products){
 			if (err) throw err;
 			res.json(products);
 		});
@@ -410,7 +419,7 @@ router.route('/orders/:product_id')
 	.post( function(req, res){
 		var order = new Order({
 			product_id: req.params.product_id,
-			user_id: req.body.id
+			user_id: req.body.user_id
 		});
 
 		order.save(function(err) {
@@ -459,7 +468,7 @@ router.route('/orders/user/items')
 
 	// get all orders from a user
 	.get( function(req, res) {
-		Order.find({user_id : req.body.id}, function(err, orders) {
+		Order.find({user_id : req.body.user_id}, function(err, orders) {
 			if (err) throw err;
 			res.json(orders);
 		});
@@ -467,7 +476,7 @@ router.route('/orders/user/items')
 
 	// remove all orders from a buyer
 	.delete( function(req, res) {
-		Order.remove({user_id : req.body.id}, function(err, orders) {
+		Order.remove({user_id : req.body.user_id}, function(err, orders) {
 			if (err) throw err;
 
 			res.json({ message: 'Deleted!'})
@@ -600,7 +609,7 @@ router.route('/posts/user/items')
 
 	.get(function(req, res) {
         var userPosts = [];
-        Product.find({user_id : req.user.id}, function(err, products) {
+        Product.find({user_id : req.body.user_id}, function(err, products) {
             if (err) throw err;
             async.eachSeries(products, function(product, next){
                 Post.find({product_id : product.id}, function(err, posts) {
