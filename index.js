@@ -86,16 +86,21 @@ router.get('/', function(req, res) {
 router.route('/login')
 
 	// render the page and pass in any flash data if it exists
-	.get(function(req, res) {
-		res.render('login.ejs' , { message : req.flash('loginMessage') });
+	//.get(function(req, res) {
+	//	res.render('login.ejs' , { message : req.flash('loginMessage') });
+	//})
+
+	//app.post('/login',passport.authenticate('local-login', {
+	//	successRedirect : '/api/users', // redirect to the secure profile section
+	//	failureRedirect : '/login', // redirect back to the signup page if there is an error
+	//	failureFlash : true // allow flash messages
+	//}));
+	.post(function(req, res) {
+		User.findOne({ email : req.body.email },function(err, user){
+			if (err) throw err;
+			res.json(user);
+		});
 	})
-
-	app.post('/login',passport.authenticate('local-login', {
-		successRedirect : '/api/users', // redirect to the secure profile section
-		failureRedirect : '/login', // redirect back to the signup page if there is an error
-		failureFlash : true // allow flash messages
-	}));
-
 
 router.route('/signup')
 
